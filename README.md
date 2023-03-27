@@ -17,6 +17,6 @@ In this code, the user will be prompted to enter the name of the process they wa
 
 ---
 
-PowerShell code that will list all running processes and give the user the option to select a process to kill by name:
+### PowerShell code that will list all running processes and give the user the option to select a process to kill by name:
 ```
 ```
