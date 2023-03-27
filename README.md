@@ -64,6 +64,57 @@ if %errorlevel% equ 0 (
 
 In this code, the tasklist command is used to list all running processes. The user is then prompted to enter the name of the process they want to kill. The taskkill command is used to kill the process by name. The findstr command is used to search the output of the tasklist command for the process name to check if it was successfully killed. If the process is found, the code will print a message indicating that the process could not be killed. If the process is not found, the code will print a message confirming that the process was successfully killed.
 
+---
+
+### C++ code that will kill a process by name:
+
+```
+#include <iostream>
+#include <windows.h>
+#include <tlhelp32.h>
+#include <string>
+
+using namespace std;
+
+int main() {
+    // Prompt the user to enter the name of the process to kill
+    string processName;
+    cout << "Enter the name of the process to kill: ";
+    getline(cin, processName);
+
+    // Get a snapshot of the system's processes
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 processEntry;
+    processEntry.dwSize = sizeof(processEntry);
+
+    // Find the process by name and kill it
+    if (Process32First(snapshot, &processEntry)) {
+        do {
+            if (string(processEntry.szExeFile) == processName) {
+                HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, processEntry.th32ProcessID);
+                if (hProcess != NULL) {
+                    TerminateProcess(hProcess, 0);
+                    CloseHandle(hProcess);
+                    cout << "The process " << processName << " was successfully killed." << endl;
+                    return 0;
+                }
+            }
+        } while (Process32Next(snapshot, &processEntry));
+    }
+
+    // Close the snapshot handle
+    CloseHandle(snapshot);
+
+    cout << "The process " << processName << " could not be found." << endl;
+    return 0;
+}
+
+```
+
+In this code, the user is prompted to enter the name of the process they want to kill. The CreateToolhelp32Snapshot function is used to get a snapshot of the system's processes, and the Process32First and Process32Next functions are used to iterate through the list of processes. If a process with the given name is found, the OpenProcess function is used to get a handle to the process, and the TerminateProcess function is used to kill the process. If the process is successfully killed, a message is printed indicating that the process was successfully killed. If the process could not be found, a message is printed indicating that the process could not be found.
+
+
+
 
 
 
