@@ -143,3 +143,79 @@ The Get-Process cmdlet is used to list all running processes, and the Read-Host 
 Next, the script checks if the process exists and has at least one thread that is not already frozen. If the process meets these conditions, the script uses the Suspend() method to freeze all threads in the process, and displays a message confirming that the process has been frozen.
 
 If the process does not exist or is already frozen, the script displays an appropriate message to the user.
+
+---
+
+### C++ code that will list all running processes and give the user the option to select a process to `freeze` by name:
+
+```
+#include <iostream>
+#include <string>
+#include <windows.h>
+#include <tlhelp32.h>
+
+using namespace std;
+
+int main() {
+    // List all running processes
+    PROCESSENTRY32 processEntry;
+    processEntry.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+    if (Process32First(snapshot, &processEntry)) {
+        do {
+            cout << processEntry.szExeFile << endl;
+        } while (Process32Next(snapshot, &processEntry));
+    }
+    CloseHandle(snapshot);
+
+    // Prompt user to enter process name to freeze
+    string processName;
+    cout << "Enter the name of the process to freeze: ";
+    cin >> processName;
+
+    // Get the process handle by name
+    HANDLE processHandle = NULL;
+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+    if (Process32First(snapshot, &processEntry)) {
+        do {
+            if (string(processEntry.szExeFile) == processName) {
+                processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processEntry.th32ProcessID);
+                break;
+            }
+        } while (Process32Next(snapshot, &processEntry));
+    }
+    CloseHandle(snapshot);
+
+    // Check if process handle was obtained
+    if (processHandle) {
+        // Suspend the process by freezing all threads
+        HANDLE snapshotThread = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+        THREADENTRY32 threadEntry;
+        threadEntry.dwSize = sizeof(THREADENTRY32);
+        if (Thread32First(snapshotThread, &threadEntry)) {
+            do {
+                if (threadEntry.th32OwnerProcessID == processEntry.th32ProcessID) {
+                    HANDLE threadHandle = OpenThread(THREAD_ALL_ACCESS, FALSE, threadEntry.th32ThreadID);
+                    if (threadHandle) {
+                        SuspendThread(threadHandle);
+                        CloseHandle(threadHandle);
+                    }
+                }
+            } while (Thread32Next(snapshotThread, &threadEntry));
+        }
+        CloseHandle(snapshotThread);
+
+        cout << "Process '" << processName << "' has been frozen." << endl;
+    } else {
+        cout << "Could not find process '" << processName << "' or could not obtain process handle." << endl;
+    }
+
+    return 0;
+}
+
+```
+
+The code uses the Windows API to list all running processes and prompt the user for the name of the process to freeze. It then retrieves the process handle by name and uses the SuspendThread() function to freeze all threads in the process.
+
+The CreateToolhelp32Snapshot() function is used to obtain a snapshot of the running processes and threads, and the Process32First() and Process32Next() functions are used to iterate through the list of processes. The OpenProcess() function is used to obtain a handle to the process by ID, and the Thread32First() and Thread32Next() functions are used to iterate through the list of threads in the process. The OpenThread() function is used to obtain a handle to each thread by ID, and the SuspendThread() function is used to freeze the thread.
