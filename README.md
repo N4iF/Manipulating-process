@@ -113,8 +113,33 @@ int main() {
 
 In this code, the user is prompted to enter the name of the process they want to kill. The CreateToolhelp32Snapshot function is used to get a snapshot of the system's processes, and the Process32First and Process32Next functions are used to iterate through the list of processes. If a process with the given name is found, the OpenProcess function is used to get a handle to the process, and the TerminateProcess function is used to kill the process. If the process is successfully killed, a message is printed indicating that the process was successfully killed. If the process could not be found, a message is printed indicating that the process could not be found.
 
+---
 
+### PowerShell code that lists all running processes and prompts the user to enter a process name to `freeze`:
 
+```
+# List all running processes
+Get-Process
 
+# Prompt user to enter process name to freeze
+$processName = Read-Host 'Enter the name of the process to freeze'
 
+# Get the process object by name
+$process = Get-Process -Name $processName
 
+# Check if process exists and is not already frozen
+if ($process -and $process.Threads.Count -gt 0 -and !$process.Threads[0].WaitReason) {
+    # Suspend the process by freezing all threads
+    $process.Threads | ForEach-Object { $_.Suspend() }
+    Write-Host "Process '$processName' has been frozen."
+} else {
+    Write-Host "Process '$processName' does not exist or is already frozen."
+}
+
+```
+
+The Get-Process cmdlet is used to list all running processes, and the Read-Host cmdlet is used to prompt the user for the name of the process to freeze. The Get-Process cmdlet is used again to retrieve the process object by name.
+
+Next, the script checks if the process exists and has at least one thread that is not already frozen. If the process meets these conditions, the script uses the Suspend() method to freeze all threads in the process, and displays a message confirming that the process has been frozen.
+
+If the process does not exist or is already frozen, the script displays an appropriate message to the user.
